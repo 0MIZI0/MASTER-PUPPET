@@ -57,7 +57,7 @@ func _handle_unit_died(unit: Node2D) -> void:
 	if ended:
 		return
 	_on_unit_died(unit)
-	if not ended and get_tree().get_nodes_in_group(UnitBase.GROUP_ALLY).is_empty():
+	if not ended and UnitRegistry.allies.is_empty():
 		fail("분대 전멸")
 	elif not ended:
 		_emit_progress()

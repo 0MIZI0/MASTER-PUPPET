@@ -17,6 +17,7 @@ config/features=PackedStringArray("4.3", "GL Compatibility")
 [autoload]
 
 EventBus="*res://core/event_bus.gd"
+UnitRegistry="*res://core/unit_registry.gd"
 
 [debug]
 

@@ -2,7 +2,6 @@ class_name CombatHUD
 extends CanvasLayer
 ## 전투 HUD: 핀 타입 선택, 역제안 팝업, 분대장 심리 스탯, 불릿 타임 표시. (비네팅 페이드는 BulletTimeController) EventBus 전용 통신.
 
-const GROUP_LEADER: StringName = &"squad_leader"
 const SKILL_BUTTON_SIZE: Vector2 = Vector2(125, 96)
 const MISSION_BUTTON_SIZE: Vector2 = Vector2(150, 52)
 
@@ -80,12 +79,12 @@ func _on_proposal_resolved(_accepted: bool) -> void:
 
 
 func _on_hero_state_changed(hero: Node2D, _stat: StringName, _value: float) -> void:
-	if hero.is_in_group(GROUP_LEADER):
+	if hero == UnitRegistry.leader:
 		_refresh_psyche()
 
 
 func _refresh_psyche() -> void:
-	var leader: UnitBase = get_tree().get_first_node_in_group(GROUP_LEADER) as UnitBase
+	var leader: UnitBase = UnitRegistry.leader
 	if leader == null or leader.hero_data == null:
 		_psyche_label.text = "분대장 부재"
 		return

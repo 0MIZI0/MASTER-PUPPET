@@ -4,8 +4,6 @@ extends Node2D
 
 const BT_SOURCE_INPUT: StringName = &"pin_input"
 const BT_SOURCE_PROPOSAL: StringName = &"counter_proposal"
-const GROUP_ENEMY: StringName = &"enemies"
-const GROUP_LEADER: StringName = &"squad_leader"
 
 @export var ego_config: EgoConfig
 @export var path_line: Line2D
@@ -147,9 +145,8 @@ func _scan_threat(pos: Vector2) -> void:
 	var r2: float = ego_config.danger_radius * ego_config.danger_radius
 	var sum: Vector2 = Vector2.ZERO
 	_threat_count = 0
-	for node: Node in get_tree().get_nodes_in_group(GROUP_ENEMY):
-		var e: Node2D = node as Node2D
-		if e and e.global_position.distance_squared_to(pos) <= r2:
+	for e: UnitBase in UnitRegistry.enemies:
+		if e.global_position.distance_squared_to(pos) <= r2:
 			sum += e.global_position
 			_threat_count += 1
 	_threat_centroid = sum / float(_threat_count) if _threat_count > 0 else pos
@@ -218,7 +215,7 @@ func _commit(type: int, pos: Vector2) -> void:
 
 # ---------------------------------------------------------------- Util
 func _get_leader() -> UnitBase:
-	return get_tree().get_first_node_in_group(GROUP_LEADER) as UnitBase
+	return UnitRegistry.leader
 
 
 func _snap_to_nav(pos: Vector2) -> Vector2:

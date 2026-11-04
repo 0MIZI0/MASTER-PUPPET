@@ -6,14 +6,14 @@ var _total: int = 0
 
 
 func _on_begin() -> void:
-	_total = get_tree().get_nodes_in_group(UnitBase.GROUP_ENEMY).size()
+	_total = UnitRegistry.enemies.size()
 
 
 func _on_unit_died(_unit: Node2D) -> void:
-	if get_tree().get_nodes_in_group(UnitBase.GROUP_ENEMY).is_empty():
+	if UnitRegistry.enemies.is_empty():
 		complete("적 섬멸")
 
 
 func _progress_text() -> String:
-	var alive: int = get_tree().get_nodes_in_group(UnitBase.GROUP_ENEMY).size()
+	var alive: int = UnitRegistry.enemies.size()
 	return "적 섬멸 %d / %d" % [_total - alive, _total]

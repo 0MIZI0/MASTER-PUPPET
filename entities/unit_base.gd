@@ -11,16 +11,7 @@ signal despawned(unit: UnitBase)
 const GROUP_ALLY: StringName = &"allies"
 const GROUP_ENEMY: StringName = &"enemies"
 const GROUP_LEADER: StringName = &"squad_leader"
-const RETARGET_INTERVAL: float = 0.3
-const REPATH_DIST_SQ: float = 32.0 * 32.0
-const ARRIVE_DIST_SQ: float = 40.0 * 40.0
-const FOCUS_PICK_RADIUS: float = 160.0
-const SLOT_SPACING: float = 46.0
 const BODY_RADIUS: float = 16.0
-const HEAL_THRESHOLD: float = 0.9
-const WITNESS_RANGE_SQ: float = 500.0 * 500.0
-const FEAR_ON_ALLY_DEATH: float = 6.0
-const SANITY_ON_ALLY_DEATH: float = -4.0
 const FLASH_TIME: float = 0.12
 const COLOR_ALLY: Color = Color(0.29, 0.53, 0.91)
 const COLOR_ENEMY: Color = Color(0.85, 0.22, 0.22)
@@ -31,11 +22,18 @@ const BUBBLE_TEXT: Color = Color(0.914, 0.89, 0.843)
 const BUBBLE_OUTLINE: Color = Color(0.09, 0.086, 0.106)
 
 @export var data: UnitData
+@export var tuning: CombatTuning
 @export var faction: Faction = Faction.ENEMY
 @export var is_leader: bool = false
 @export_range(0, 4) var squad_slot: int = 0
 
 var pooled: bool = false
+
+## tuning 파생 제곱값 캐시 (매 판정 곱셈 제거)
+var _repath_sq: float = 0.0
+var _arrive_sq: float = 0.0
+var _focus_sq: float = 0.0
+var _witness_sq: float = 0.0
 
 var stats: UnitData
 var hero_data: HeroData
@@ -67,6 +65,11 @@ var _bubble_time: float = 0.0
 
 func _ready() -> void:
 	assert(data != null, "UnitBase: data 필요")
+	assert(tuning != null, "UnitBase: tuning 필요")
+	_repath_sq = tuning.repath_distance * tuning.repath_distance
+	_arrive_sq = tuning.arrive_distance * tuning.arrive_distance
+	_focus_sq = tuning.focus_pick_radius * tuning.focus_pick_radius
+	_witness_sq = tuning.witness_range * tuning.witness_range
 	_init_runtime(1.0)
 	agent.velocity_computed.connect(_on_velocity_computed)
 	EventBus.unit_died.connect(_on_unit_died)
@@ -82,7 +85,7 @@ func _physics_process(delta: float) -> void:
 	_tick_timers(delta)
 	_retarget_acc -= delta
 	if _retarget_acc <= 0.0:
-		_retarget_acc = RETARGET_INTERVAL
+		_retarget_acc = tuning.retarget_interval
 		_think()
 	match state:
 		State.MOVE_TO_PIN: _process_move_to_pin()
@@ -113,7 +116,8 @@ func _init_runtime(hp_mult: float) -> void:
 	add_to_group(GROUP_ALLY if faction == Faction.ALLY else GROUP_ENEMY)
 	if is_leader:
 		add_to_group(GROUP_LEADER)
-	_retarget_acc = randf() * RETARGET_INTERVAL
+	UnitRegistry.register(self)
+	_retarget_acc = randf() * tuning.retarget_interval
 	queue_redraw()
 
 
@@ -133,6 +137,10 @@ func activate(new_data: UnitData, pos: Vector2, hp_mult: float = 1.0) -> void:
 func set_march_goal(pos: Vector2) -> void:
 	_march_goal = pos
 	_retarget_acc = 0.0
+
+
+func _exit_tree() -> void:
+	UnitRegistry.unregister(self)
 
 
 # ---------------------------------------------------------------- AI
@@ -162,13 +170,12 @@ func _find_target() -> UnitBase:
 			_target_friendly = true
 			return heal_t
 	_target_friendly = false
-	var opp: StringName = GROUP_ENEMY if faction == Faction.ALLY else GROUP_ALLY
-	return _nearest_in_group(opp, global_position, aggro_sq)
+	return _nearest_in(UnitRegistry.opponents_of(faction), global_position, aggro_sq)
 
 
 func _process_move_to_pin() -> void:
 	var goal: Vector2 = _pin_pos + _slot_offset()
-	if global_position.distance_squared_to(goal) <= ARRIVE_DIST_SQ:
+	if global_position.distance_squared_to(goal) <= _arrive_sq:
 		_has_order = false
 		state = State.IDLE
 		_retarget_acc = 0.0
@@ -192,7 +199,7 @@ func _process_attack() -> void:
 	if not _is_alive(target):
 		_drop_target()
 		return
-	if not _in_range(target, 1.15):
+	if not _in_range(target, tuning.attack_range_slack):
 		state = State.CHASE
 		return
 	_set_desired(Vector2.ZERO)
@@ -206,7 +213,7 @@ func _perform_attack() -> void:
 	if _target_friendly:
 		target.heal(power)
 	else:
-		target.take_damage(maxf(1.0, power - target.stats.defense), self)
+		target.take_damage(maxf(tuning.min_damage, power - target.stats.defense), self)
 	_flash_to = target.global_position - global_position
 	_flash_time = FLASH_TIME
 	queue_redraw()
@@ -221,7 +228,7 @@ func _drop_target() -> void:
 
 # ---------------------------------------------------------------- Movement
 func _nav_to(goal: Vector2) -> void:
-	if goal.distance_squared_to(_nav_goal) > REPATH_DIST_SQ:
+	if goal.distance_squared_to(_nav_goal) > _repath_sq:
 		_nav_goal = goal
 		agent.target_position = goal
 	if agent.is_navigation_finished():
@@ -247,7 +254,7 @@ func _on_velocity_computed(safe_velocity: Vector2) -> void:
 func _slot_offset() -> Vector2:
 	if squad_slot == 0:
 		return Vector2.ZERO
-	return Vector2.from_angle(TAU * float(squad_slot - 1) / 4.0) * SLOT_SPACING
+	return Vector2.from_angle(TAU * float(squad_slot - 1) / 4.0) * tuning.slot_spacing
 
 
 # ---------------------------------------------------------------- Combat API
@@ -278,6 +285,7 @@ func deactivate() -> void:
 	remove_from_group(GROUP_ALLY)
 	remove_from_group(GROUP_ENEMY)
 	remove_from_group(GROUP_LEADER)
+	UnitRegistry.unregister(self)
 	_shape.set_deferred("disabled", true)
 	agent.avoidance_enabled = false
 	velocity = Vector2.ZERO
@@ -345,7 +353,7 @@ func _on_pin_committed(type: int, pos: Vector2) -> void:
 	_pin_pos = pos
 	_nav_goal = Vector2.INF
 	if type == PinTypes.Type.FOCUS:
-		_forced_target = _nearest_in_group(GROUP_ENEMY, pos, FOCUS_PICK_RADIUS * FOCUS_PICK_RADIUS)
+		_forced_target = _nearest_in(UnitRegistry.enemies, pos, _focus_sq)
 		_has_order = _forced_target == null
 	else:
 		_forced_target = null
@@ -381,9 +389,9 @@ func _on_unit_died(node: Node2D) -> void:
 	if unit == target or unit == _forced_target:
 		_retarget_acc = 0.0
 	if hero_data and unit.faction == faction \
-			and global_position.distance_squared_to(unit.global_position) <= WITNESS_RANGE_SQ:
-		change_psyche(&"fear", FEAR_ON_ALLY_DEATH)
-		change_psyche(&"sanity", SANITY_ON_ALLY_DEATH)
+			and global_position.distance_squared_to(unit.global_position) <= _witness_sq:
+		change_psyche(&"fear", tuning.fear_on_ally_death)
+		change_psyche(&"sanity", tuning.sanity_on_ally_death)
 		remember("%s의 죽음을 목격했다." % unit.stats.display_name)
 
 
@@ -420,12 +428,11 @@ func _is_alive(u: UnitBase) -> bool:
 	return u != null and is_instance_valid(u) and not u.is_dead()
 
 
-func _nearest_in_group(group: StringName, from: Vector2, max_dist_sq: float) -> UnitBase:
+func _nearest_in(list: Array[UnitBase], from: Vector2, max_dist_sq: float) -> UnitBase:
 	var best: UnitBase = null
 	var best_d: float = max_dist_sq
-	for n: Node in get_tree().get_nodes_in_group(group):
-		var u: UnitBase = n as UnitBase
-		if u == null or u == self:
+	for u: UnitBase in list:
+		if u == self:
 			continue
 		var d: float = from.distance_squared_to(u.global_position)
 		if d <= best_d:
@@ -436,11 +443,9 @@ func _nearest_in_group(group: StringName, from: Vector2, max_dist_sq: float) -> 
 
 func _lowest_hp_ally(max_dist_sq: float) -> UnitBase:
 	var best: UnitBase = null
-	var best_ratio: float = HEAL_THRESHOLD
-	var group: StringName = GROUP_ALLY if faction == Faction.ALLY else GROUP_ENEMY
-	for n: Node in get_tree().get_nodes_in_group(group):
-		var u: UnitBase = n as UnitBase
-		if u == null or global_position.distance_squared_to(u.global_position) > max_dist_sq:
+	var best_ratio: float = tuning.heal_threshold
+	for u: UnitBase in UnitRegistry.of_faction(faction):
+		if global_position.distance_squared_to(u.global_position) > max_dist_sq:
 			continue
 		var ratio: float = u.hp / u.stats.max_hp
 		if ratio < best_ratio:

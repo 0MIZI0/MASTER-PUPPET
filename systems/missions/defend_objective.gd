@@ -34,7 +34,7 @@ func _on_begin() -> void:
 	assert(data.wave_enemy != null, "DefendObjective: wave_enemy 필요")
 	_pool = UnitPool.new()
 	add_child(_pool)
-	_pool.setup(unit_container, mini(data.max_alive, 12), data.wave_enemy)
+	_pool.setup(unit_container, mini(data.max_alive, data.pool_prewarm), data.wave_enemy)
 	_next_wave_in = data.first_wave_delay
 	queue_redraw()
 
@@ -63,8 +63,8 @@ func _on_tick(dt: float) -> void:
 
 
 func _on_end(_victory: bool) -> void:
-	for n: Node in get_tree().get_nodes_in_group(UnitBase.GROUP_ENEMY):
-		(n as UnitBase).set_march_goal(Vector2.INF)
+	for u: UnitBase in UnitRegistry.enemies:
+		u.set_march_goal(Vector2.INF)
 
 
 func _spawn_wave() -> void:
@@ -75,7 +75,8 @@ func _spawn_wave() -> void:
 		if _pool.alive_count() >= data.max_alive:
 			break
 		var sp: Vector2 = spawn_points[i % spawn_points.size()]
-		var jitter: Vector2 = Vector2(randf_range(-40.0, 40.0), randf_range(-40.0, 40.0))
+		var j: float = data.spawn_jitter
+		var jitter: Vector2 = Vector2(randf_range(-j, j), randf_range(-j, j))
 		var u: UnitBase = _pool.acquire(data.wave_enemy, UnitBase.Faction.ENEMY, sp + jitter, hp_mult)
 		u.set_march_goal(zone_center)
 
@@ -84,11 +85,11 @@ func _count_zone() -> void:
 	var r2: float = data.zone_radius * data.zone_radius
 	_enemies_in = 0
 	_allies_in = 0
-	for n: Node in get_tree().get_nodes_in_group(UnitBase.GROUP_ENEMY):
-		if (n as Node2D).global_position.distance_squared_to(zone_center) <= r2:
+	for u: UnitBase in UnitRegistry.enemies:
+		if u.global_position.distance_squared_to(zone_center) <= r2:
 			_enemies_in += 1
-	for n: Node in get_tree().get_nodes_in_group(UnitBase.GROUP_ALLY):
-		if (n as Node2D).global_position.distance_squared_to(zone_center) <= r2:
+	for u: UnitBase in UnitRegistry.allies:
+		if u.global_position.distance_squared_to(zone_center) <= r2:
 			_allies_in += 1
 
 

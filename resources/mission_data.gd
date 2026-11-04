@@ -29,3 +29,6 @@ enum Kind { ANNIHILATE, DEFEND }
 @export_range(0.0, 2.0) var wave_hp_growth: float = 0.12
 ## 동시 생존 적 상한 (풀 크기)
 @export_range(1, 200) var max_alive: int = 24
+## 미션 시작 시 미리 생성할 풀 크기 (스폰 순간 instantiate 스파이크 방지)
+@export_range(0, 200) var pool_prewarm: int = 12
+@export_range(0.0, 300.0) var spawn_jitter: float = 40.0

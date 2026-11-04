@@ -126,16 +126,15 @@ func _on_skill_cast(skill: MasterSkillData) -> void:
 
 # ---------------------------------------------------------------- Util
 func _leader() -> UnitBase:
-	return get_tree().get_first_node_in_group(UnitBase.GROUP_LEADER) as UnitBase
+	return UnitRegistry.leader
 
 
 ## priority 지정 시 해당 우선순위로 발화 가능한 영웅만 대상.
 func _nearest_hero(from: Vector2, priority: Priority = Priority.CRITICAL) -> UnitBase:
 	var best: UnitBase = null
 	var best_d: float = INF
-	for n: Node in get_tree().get_nodes_in_group(UnitBase.GROUP_ALLY):
-		var u: UnitBase = n as UnitBase
-		if u == null or u.hero_data == null or not can_speak(u, priority):
+	for u: UnitBase in UnitRegistry.allies:
+		if u.hero_data == null or not can_speak(u, priority):
 			continue
 		var d: float = from.distance_squared_to(u.global_position)
 		if d < best_d:
