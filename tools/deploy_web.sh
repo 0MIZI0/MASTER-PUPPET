@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Web export -> 검증 -> gh-pages 배포 (GitHub Pages).
-# 사용: tools/deploy_web.sh [--no-push]
+# 사용: tools/deploy_web.sh [--no-push] [--wait-remote <sha>]
+#   --wait-remote: 원격 main이 <sha>가 될 때까지 대기 후 배포 (pre-push 훅용)
 # 환경변수: GODOT_BIN(기본 /usr/local/bin/godot), DEPLOY_REMOTE(기본 origin)
 set -euo pipefail
 
@@ -15,12 +16,29 @@ REMOTE="${DEPLOY_REMOTE:-origin}"
 PRESET="Web"
 OUT_DIR="build/web"
 PUSH=1
-[[ "${1:-}" == "--no-push" ]] && PUSH=0
+WAIT_SHA=""
+while [[ $# -gt 0 ]]; do
+	case "$1" in
+		--no-push) PUSH=0; shift ;;
+		--wait-remote) WAIT_SHA="${2:?sha 필요}"; shift 2 ;;
+		*) echo "알 수 없는 인자: $1" >&2; exit 2 ;;
+	esac
+done
 
 log() { printf '\033[36m[deploy]\033[0m %s\n' "$*"; }
 die() { printf '\033[31m[deploy] %s\033[0m\n' "$*" >&2; exit 1; }
 
 [[ -x "$GODOT" ]] || die "Godot 실행 파일 없음: $GODOT"
+
+if [[ -n "$WAIT_SHA" ]]; then
+	log "원격 main 반영 대기 (${WAIT_SHA:0:7})"
+	for _ in $(seq 1 60); do
+		[[ "$(git ls-remote "$REMOTE" refs/heads/main | cut -f1)" == "$WAIT_SHA" ]] && break
+		sleep 2
+	done
+	[[ "$(git ls-remote "$REMOTE" refs/heads/main | cut -f1)" == "$WAIT_SHA" ]] || die "main push가 반영되지 않아 배포 취소"
+	[[ "$(git rev-parse HEAD)" == "$WAIT_SHA" ]] || die "HEAD가 바뀌어 배포 취소"
+fi
 
 # 커밋된 상태만 배포 (추적 파일 미커밋 변경 시 중단)
 if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then

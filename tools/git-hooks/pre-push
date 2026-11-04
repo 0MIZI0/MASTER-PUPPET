@@ -1,26 +1,27 @@
 #!/usr/bin/env bash
-# main push 시 웹 빌드 자동 배포. 건너뛰기: SKIP_DEPLOY=1 git push
-# 배포 실패는 경고만 출력하고 push는 진행.
+# main push 시 웹 빌드 자동 배포 (백그라운드). 건너뛰기: SKIP_DEPLOY=1 git push
+# push 완료를 확인한 뒤 배포하며, 로그는 .git/deploy_web.log
 set -uo pipefail
 
 [[ "${SKIP_DEPLOY:-0}" == "1" ]] && exit 0
 
 ZERO="0000000000000000000000000000000000000000"
 HEAD_SHA="$(git rev-parse HEAD)"
-deploy=0
+target=""
 while read -r _local_ref local_sha remote_ref _remote_sha; do
 	[[ "$remote_ref" == "refs/heads/main" && "$local_sha" != "$ZERO" ]] || continue
 	if [[ "$local_sha" != "$HEAD_SHA" ]]; then
-		echo "[pre-push] push 대상($local_sha)이 HEAD와 달라 배포를 건너뜁니다." >&2
+		echo "[pre-push] push 대상이 HEAD와 달라 배포를 건너뜁니다." >&2
 		continue
 	fi
-	deploy=1
+	target="$local_sha"
 done
 
-[[ $deploy -eq 1 ]] || exit 0
+[[ -n "$target" ]] || exit 0
 
 ROOT="$(git rev-parse --show-toplevel)"
-if ! "$ROOT/tools/deploy_web.sh"; then
-	echo "[pre-push] ⚠ 웹 배포 실패 — main push는 계속 진행합니다." >&2
-fi
+LOG="$(git rev-parse --absolute-git-dir)/deploy_web.log"
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_PREFIX
+nohup "$ROOT/tools/deploy_web.sh" --wait-remote "$target" >"$LOG" 2>&1 </dev/null &
+echo "[pre-push] 웹 배포를 백그라운드에서 시작합니다. 로그: $LOG" >&2
 exit 0
