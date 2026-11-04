@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="MissionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/mission_data.gd" id="1_mission"]
+
+[resource]
+script = ExtResource("1_mission")
+id = &"annihilate"
+display_name = "섬멸"
+briefing = "구울 무리를 전멸시켜라."
+kind = 0
+keep_preplaced_enemies = true

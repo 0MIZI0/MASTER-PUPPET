@@ -4,6 +4,7 @@ extends CanvasLayer
 
 const GROUP_LEADER: StringName = &"squad_leader"
 const SKILL_BUTTON_SIZE: Vector2 = Vector2(125, 96)
+const MISSION_BUTTON_SIZE: Vector2 = Vector2(150, 52)
 
 @export_multiline var proposal_line: String = "%s: \"거긴 위험해요, 마스터. 이쪽으로 우회하죠.\""
 
@@ -13,12 +14,19 @@ const SKILL_BUTTON_SIZE: Vector2 = Vector2(125, 96)
 @onready var _proposal_panel: PanelContainer = %ProposalPanel
 @onready var _proposal_text: Label = %ProposalText
 @onready var _result_label: Label = %ResultLabel
+@onready var _result_box: VBoxContainer = %ResultBox
+@onready var _result_reason: Label = %ResultReason
+@onready var _mission_buttons: HBoxContainer = %MissionButtons
+@onready var _mission_title: Label = %MissionTitle
+@onready var _mission_progress: Label = %MissionProgress
+@onready var _mission_brief: Label = %MissionBrief
 @onready var _mana_label: Label = %ManaLabel
 @onready var _mana_bar: ProgressBar = %ManaBar
 @onready var _skill_bar: HBoxContainer = %SkillBar
 
 var _skills: Array[MasterSkillData] = []
 var _skill_buttons: Array[Button] = []
+var _mission_index: int = 0
 
 
 func _ready() -> void:
@@ -34,6 +42,11 @@ func _ready() -> void:
 	EventBus.unit_died.connect(_on_unit_died)
 	EventBus.master_skills_ready.connect(_on_skills_ready)
 	EventBus.master_state_changed.connect(_on_master_state)
+	EventBus.missions_available.connect(_on_missions_available)
+	EventBus.mission_started.connect(_on_mission_started)
+	EventBus.mission_progress.connect(_on_mission_progress)
+	EventBus.mission_ended.connect(_on_mission_ended)
+	(%BtnRetry as Button).pressed.connect(func() -> void: EventBus.mission_restart_requested.emit(_mission_index))
 	_on_pin_type_selected(PinTypes.Type.MOVE)
 	_refresh_psyche.call_deferred()
 
@@ -74,15 +87,39 @@ func _refresh_psyche() -> void:
 
 func _on_unit_died(_unit: Node2D) -> void:
 	_refresh_psyche()
-	if get_tree().get_nodes_in_group(UnitBase.GROUP_ENEMY).is_empty():
-		_show_result("VICTORY")
-	elif get_tree().get_nodes_in_group(UnitBase.GROUP_ALLY).is_empty():
-		_show_result("DEFEAT")
 
 
-func _show_result(text: String) -> void:
-	_result_label.text = text
-	_result_label.show()
+# ---------------------------------------------------------------- Mission
+func _on_missions_available(missions: Array[MissionData], current: int) -> void:
+	_mission_index = current
+	for c: Node in _mission_buttons.get_children():
+		c.queue_free()
+	for i: int in missions.size():
+		var b: Button = Button.new()
+		b.text = missions[i].display_name
+		b.custom_minimum_size = MISSION_BUTTON_SIZE
+		b.focus_mode = Control.FOCUS_NONE
+		b.toggle_mode = true
+		b.set_pressed_no_signal(i == current)
+		b.add_theme_font_size_override(&"font_size", 22)
+		b.pressed.connect(EventBus.mission_restart_requested.emit.bind(i))
+		_mission_buttons.add_child(b)
+
+
+func _on_mission_started(title: String, briefing: String) -> void:
+	_mission_title.text = title
+	_mission_brief.text = briefing
+	_result_box.hide()
+
+
+func _on_mission_progress(text: String) -> void:
+	_mission_progress.text = text
+
+
+func _on_mission_ended(victory: bool, reason: String) -> void:
+	_result_label.text = "VICTORY" if victory else "DEFEAT"
+	_result_reason.text = reason
+	_result_box.show()
 
 
 # ---------------------------------------------------------------- Master Skills

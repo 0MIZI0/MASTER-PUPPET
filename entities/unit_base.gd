@@ -3,7 +3,10 @@ extends CharacterBody2D
 ## 자유 이동 오토배틀 유닛 (영웅/몬스터 공용). NavigationAgent2D RVO 회피.
 
 enum Faction { ALLY, ENEMY }
-enum State { IDLE, CHASE, ATTACK, MOVE_TO_PIN, DEAD }
+enum State { IDLE, CHASE, ATTACK, MOVE_TO_PIN, DEAD, MARCH }
+
+## 풀링 유닛: 사망 시 queue_free 대신 발행 → UnitPool 회수
+signal despawned(unit: UnitBase)
 
 const GROUP_ALLY: StringName = &"allies"
 const GROUP_ENEMY: StringName = &"enemies"
@@ -29,6 +32,8 @@ const COLOR_SHIELD: Color = Color(0.62, 0.78, 0.95)
 @export var is_leader: bool = false
 @export_range(0, 4) var squad_slot: int = 0
 
+var pooled: bool = false
+
 var stats: UnitData
 var hero_data: HeroData
 var hp: float = 0.0
@@ -49,6 +54,7 @@ var _flash_time: float = 0.0
 var _flash_to: Vector2 = Vector2.ZERO
 var _shield: float = 0.0
 var _shield_time: float = 0.0
+var _march_goal: Vector2 = Vector2.INF
 
 @onready var agent: NavigationAgent2D = $NavigationAgent2D
 @onready var _shape: CollisionShape2D = $CollisionShape2D
@@ -56,15 +62,8 @@ var _shield_time: float = 0.0
 
 func _ready() -> void:
 	assert(data != null, "UnitBase: data 필요")
-	stats = data.duplicate(true) as UnitData
-	hero_data = stats as HeroData
-	hp = stats.max_hp
-	agent.max_speed = stats.move_speed
+	_init_runtime(1.0)
 	agent.velocity_computed.connect(_on_velocity_computed)
-	add_to_group(GROUP_ALLY if faction == Faction.ALLY else GROUP_ENEMY)
-	if is_leader:
-		add_to_group(GROUP_LEADER)
-	_retarget_acc = randf() * RETARGET_INTERVAL
 	EventBus.unit_died.connect(_on_unit_died)
 	if faction == Faction.ALLY:
 		EventBus.pin_committed.connect(_on_pin_committed)
@@ -84,7 +83,51 @@ func _physics_process(delta: float) -> void:
 		State.MOVE_TO_PIN: _process_move_to_pin()
 		State.CHASE: _process_chase()
 		State.ATTACK: _process_attack()
+		State.MARCH: _nav_to(_march_goal)
 		_: _set_desired(Vector2.ZERO)
+
+
+func _init_runtime(hp_mult: float) -> void:
+	stats = data.duplicate(true) as UnitData
+	stats.max_hp *= hp_mult
+	hero_data = stats as HeroData
+	hp = stats.max_hp
+	state = State.IDLE
+	target = null
+	_forced_target = null
+	_has_order = false
+	_march_goal = Vector2.INF
+	_nav_goal = Vector2.INF
+	_attack_cd = 0.0
+	_buff_mult = 1.0
+	_buff_time = 0.0
+	_shield = 0.0
+	_shield_time = 0.0
+	_flash_time = 0.0
+	agent.max_speed = stats.move_speed
+	add_to_group(GROUP_ALLY if faction == Faction.ALLY else GROUP_ENEMY)
+	if is_leader:
+		add_to_group(GROUP_LEADER)
+	_retarget_acc = randf() * RETARGET_INTERVAL
+	queue_redraw()
+
+
+## 풀 재사용: 사망 상태 유닛을 새 데이터로 재가동.
+func activate(new_data: UnitData, pos: Vector2, hp_mult: float = 1.0) -> void:
+	data = new_data
+	global_position = pos
+	velocity = Vector2.ZERO
+	_init_runtime(hp_mult)
+	_shape.set_deferred("disabled", false)
+	agent.avoidance_enabled = true
+	set_physics_process(true)
+	show()
+
+
+## 목표 없을 때 이동할 지점 (거점 공격 등). Vector2.INF = 해제.
+func set_march_goal(pos: Vector2) -> void:
+	_march_goal = pos
+	_retarget_acc = 0.0
 
 
 # ---------------------------------------------------------------- AI
@@ -103,7 +146,7 @@ func _think() -> void:
 	elif _has_order:
 		state = State.MOVE_TO_PIN
 	else:
-		state = State.CHASE if target else State.IDLE
+		state = State.CHASE if target else (State.MARCH if _march_goal != Vector2.INF else State.IDLE)
 
 
 func _find_target() -> UnitBase:
@@ -223,11 +266,8 @@ func heal(amount: float) -> void:
 	queue_redraw()
 
 
-func is_dead() -> bool:
-	return state == State.DEAD
-
-
-func _die() -> void:
+## 전투 이탈 처리 (신호 없음). 풀 프리웜에서도 사용.
+func deactivate() -> void:
 	state = State.DEAD
 	hp = 0.0
 	remove_from_group(GROUP_ALLY)
@@ -235,9 +275,22 @@ func _die() -> void:
 	remove_from_group(GROUP_LEADER)
 	_shape.set_deferred("disabled", true)
 	agent.avoidance_enabled = false
+	velocity = Vector2.ZERO
 	set_physics_process(false)
+
+
+func is_dead() -> bool:
+	return state == State.DEAD
+
+
+func _die() -> void:
+	deactivate()
 	EventBus.unit_died.emit(self)
-	queue_free()
+	if pooled:
+		hide()
+		despawned.emit(self)
+	else:
+		queue_free()
 
 
 # ---------------------------------------------------------------- Psyche

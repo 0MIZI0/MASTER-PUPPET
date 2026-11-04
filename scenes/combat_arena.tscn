@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3]
+[gd_scene load_steps=20 format=3]
 
 [ext_resource type="Script" path="res://scenes/combat_arena.gd" id="1_arena"]
 [ext_resource type="PackedScene" path="res://entities/unit.tscn" id="2_unit"]
@@ -9,6 +9,9 @@
 [ext_resource type="Resource" path="res://resources/monsters/ghoul.tres" id="7_ghoul"]
 [ext_resource type="Script" path="res://systems/master_skill_system.gd" id="8_skills"]
 [ext_resource type="Resource" path="res://resources/master_config_default.tres" id="9_master"]
+[ext_resource type="Resource" path="res://resources/missions/annihilate.tres" id="m0_annihilate"]
+[ext_resource type="Resource" path="res://resources/missions/defend_outpost.tres" id="m1_defend"]
+[ext_resource type="Script" path="res://resources/mission_data.gd" id="m_script"]
 [ext_resource type="Resource" path="res://resources/heroes/rookie_knight.tres" id="h0_rookie_knight"]
 [ext_resource type="Resource" path="res://resources/heroes/shield_vanguard.tres" id="h1_shield_vanguard"]
 [ext_resource type="Resource" path="res://resources/heroes/rookie_archer.tres" id="h2_rookie_archer"]
@@ -23,6 +26,7 @@ size = Vector2(260, 80)
 
 [node name="CombatArena" type="Node2D"]
 script = ExtResource("1_arena")
+missions = Array[ExtResource("m_script")]([ExtResource("m0_annihilate"), ExtResource("m1_defend")])
 
 [node name="NavigationRegion2D" type="NavigationRegion2D" parent="."]
 
@@ -131,6 +135,20 @@ faction = 1
 position = Vector2(1700, 620)
 data = ExtResource("7_ghoul")
 faction = 1
+
+[node name="DefendZone" type="Marker2D" parent="."]
+position = Vector2(560, 540)
+
+[node name="SpawnPoints" type="Node2D" parent="."]
+
+[node name="SpawnTop" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(1500, 180)
+
+[node name="SpawnRight" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(1780, 540)
+
+[node name="SpawnBottom" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(1500, 960)
 
 [node name="RecallPoint" type="Marker2D" parent="."]
 position = Vector2(240, 540)

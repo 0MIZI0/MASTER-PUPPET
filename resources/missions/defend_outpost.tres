@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="MissionData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://resources/mission_data.gd" id="1_mission"]
+[ext_resource type="Resource" path="res://resources/monsters/ghoul.tres" id="2_ghoul"]
+
+[resource]
+script = ExtResource("1_mission")
+id = &"defend_outpost"
+display_name = "거점 방어"
+briefing = "90초 동안 전초기지를 사수하라. 적이 거점을 점령하면 패배."
+kind = 1
+keep_preplaced_enemies = false
+survive_time = 90.0
+zone_radius = 170.0
+capture_rate = 4.0
+recapture_rate = 6.0
+wave_enemy = ExtResource("2_ghoul")
+wave_interval = 15.0
+first_wave_delay = 3.0
+wave_size_start = 3
+wave_size_growth = 1
+wave_hp_growth = 0.12
+max_alive = 24

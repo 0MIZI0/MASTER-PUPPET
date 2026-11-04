@@ -141,7 +141,7 @@ layout_mode = 2
 focus_mode = 0
 text = "강행"
 
-[node name="ResultLabel" type="Label" parent="."]
+[node name="ResultBox" type="VBoxContainer" parent="."]
 unique_name_in_owner = true
 visible = false
 anchors_preset = 8
@@ -150,14 +150,77 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -400.0
-offset_top = -60.0
+offset_top = -150.0
 offset_right = 400.0
-offset_bottom = 60.0
+offset_bottom = 150.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="ResultLabel" type="Label" parent="ResultBox"]
+unique_name_in_owner = true
+layout_mode = 2
 theme_override_colors/font_color = Color(0.914, 0.89, 0.843, 1)
 theme_override_font_sizes/font_size = 96
 horizontal_alignment = 1
+
+[node name="ResultReason" type="Label" parent="ResultBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.788, 0.776, 0.812, 1)
+theme_override_font_sizes/font_size = 28
+horizontal_alignment = 1
+
+[node name="BtnRetry" type="Button" parent="ResultBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(240, 64)
+layout_mode = 2
+size_flags_horizontal = 4
+focus_mode = 0
+theme_override_font_sizes/font_size = 26
+text = "다시 하기"
+
+[node name="MissionBox" type="VBoxContainer" parent="."]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -600.0
+offset_top = 32.0
+offset_right = -32.0
+offset_bottom = 232.0
+grow_horizontal = 0
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="MissionButtons" type="HBoxContainer" parent="MissionBox"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+alignment = 2
+
+[node name="MissionTitle" type="Label" parent="MissionBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.914, 0.89, 0.843, 1)
+theme_override_font_sizes/font_size = 28
+horizontal_alignment = 2
+
+[node name="MissionProgress" type="Label" parent="MissionBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.788, 0.776, 0.812, 1)
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 2
+
+[node name="MissionBrief" type="Label" parent="MissionBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.557, 0.533, 0.588, 1)
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 2
+autowrap_mode = 3
 
 [node name="SkillDock" type="VBoxContainer" parent="."]
 anchors_preset = 3

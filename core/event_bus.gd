@@ -27,3 +27,11 @@ signal master_skill_requested(index: int)
 signal master_skill_cast(skill: MasterSkillData)
 signal master_skills_ready(skills: Array[MasterSkillData])
 signal master_state_changed(mana: float, max_mana: float, cooldowns: PackedFloat32Array)
+
+
+# 미션
+signal missions_available(missions: Array[MissionData], current_index: int)
+signal mission_restart_requested(index: int)
+signal mission_started(title: String, briefing: String)
+signal mission_progress(text: String)
+signal mission_ended(victory: bool, reason: String)
