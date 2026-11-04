@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="HeroData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/hero_data.gd" id="1_hero"]
+
+[resource]
+script = ExtResource("1_hero")
+id = &"rookie_mage"
+display_name = "세릴"
+tint = Color(0.55, 0.52, 0.78, 1)
+max_hp = 120.0
+attack = 26.0
+defense = 2.0
+attack_range = 240.0
+attack_interval = 1.6
+move_speed = 125.0
+aggro_range = 420.0
+rarity = 1
+role = 1
+sanity = 55.0
+loyalty = 40.0
+fear = 45.0
+memory_log = Array[String](["주문서를 품에 안고 잠든다."])

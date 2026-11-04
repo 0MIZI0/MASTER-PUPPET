@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="HeroData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/hero_data.gd" id="1_hero"]
+
+[resource]
+script = ExtResource("1_hero")
+id = &"shield_vanguard"
+display_name = "브란트"
+tint = Color(0.557, 0.533, 0.588, 1)
+max_hp = 260.0
+attack = 14.0
+defense = 12.0
+attack_range = 48.0
+attack_interval = 1.2
+move_speed = 120.0
+aggro_range = 420.0
+rarity = 1
+role = 0
+sanity = 75.0
+loyalty = 55.0
+fear = 25.0
+memory_log = Array[String](["방패 뒤에서만 웃는 퇴역병."])

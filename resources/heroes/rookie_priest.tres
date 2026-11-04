@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="HeroData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/hero_data.gd" id="1_hero"]
+
+[resource]
+script = ExtResource("1_hero")
+id = &"rookie_priest"
+display_name = "미아"
+tint = Color(0.86, 0.82, 0.64, 1)
+max_hp = 130.0
+attack = 14.0
+defense = 3.0
+attack_range = 220.0
+attack_interval = 1.4
+move_speed = 125.0
+aggro_range = 420.0
+rarity = 1
+role = 2
+sanity = 80.0
+loyalty = 60.0
+fear = 30.0
+memory_log = Array[String](["모두를 살려서 돌아가겠다고 맹세했다."])

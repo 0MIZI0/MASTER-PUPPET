@@ -1,0 +1,146 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://ui/combat_hud.gd" id="1_hud"]
+
+[sub_resource type="Shader" id="Shader_vignette"]
+code = "shader_type canvas_item;
+uniform vec4 tint : source_color = vec4(0.09, 0.086, 0.106, 1.0);
+uniform float strength = 0.9;
+void fragment() {
+	float d = distance(UV, vec2(0.5));
+	COLOR = vec4(tint.rgb, smoothstep(0.3, 0.8, d) * strength);
+}
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_vignette"]
+shader = SubResource("Shader_vignette")
+
+[node name="CombatHUD" type="CanvasLayer"]
+script = ExtResource("1_hud")
+
+[node name="Vignette" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_vignette")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="TopBar" type="HBoxContainer" parent="."]
+offset_left = 32.0
+offset_top = 32.0
+offset_right = 1200.0
+offset_bottom = 88.0
+mouse_filter = 2
+theme_override_constants/separation = 12
+
+[node name="BtnMove" type="Button" parent="TopBar"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(150, 56)
+focus_mode = 0
+toggle_mode = true
+text = "[1] 집결"
+
+[node name="BtnFocus" type="Button" parent="TopBar"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(150, 56)
+focus_mode = 0
+toggle_mode = true
+text = "[2] 일점사"
+
+[node name="BtnRetreat" type="Button" parent="TopBar"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(150, 56)
+focus_mode = 0
+toggle_mode = true
+text = "[3] 후퇴"
+
+[node name="PsycheLabel" type="Label" parent="TopBar"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_colors/font_color = Color(0.914, 0.89, 0.843, 1)
+theme_override_font_sizes/font_size = 24
+
+[node name="BulletTimeLabel" type="Label" parent="."]
+unique_name_in_owner = true
+visible = false
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -200.0
+offset_top = 100.0
+offset_right = 200.0
+offset_bottom = 140.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.788, 0.776, 0.812, 1)
+theme_override_font_sizes/font_size = 28
+text = "— BULLET TIME —"
+horizontal_alignment = 1
+
+[node name="ProposalPanel" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -420.0
+offset_top = -240.0
+offset_right = 420.0
+offset_bottom = -60.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="VBox" type="VBoxContainer" parent="ProposalPanel"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="ProposalText" type="Label" parent="ProposalPanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="Buttons" type="HBoxContainer" parent="ProposalPanel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="BtnAccept" type="Button" parent="ProposalPanel/VBox/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 56)
+layout_mode = 2
+focus_mode = 0
+text = "승인"
+
+[node name="BtnForce" type="Button" parent="ProposalPanel/VBox/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 56)
+layout_mode = 2
+focus_mode = 0
+text = "강행"
+
+[node name="ResultLabel" type="Label" parent="."]
+unique_name_in_owner = true
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -400.0
+offset_top = -60.0
+offset_right = 400.0
+offset_bottom = 60.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.914, 0.89, 0.843, 1)
+theme_override_font_sizes/font_size = 96
+horizontal_alignment = 1

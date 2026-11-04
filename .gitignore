@@ -1,0 +1,14 @@
+# Godot
+.godot/
+*.tmp
+*.translation
+export_credentials.cfg
+
+# Build output
+build/
+
+# Secrets
+.env
+.env.*
+!.env.example
+.claude/settings.local.json

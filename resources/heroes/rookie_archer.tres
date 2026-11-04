@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="HeroData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/hero_data.gd" id="1_hero"]
+
+[resource]
+script = ExtResource("1_hero")
+id = &"rookie_archer"
+display_name = "리나"
+tint = Color(0.62, 0.72, 0.58, 1)
+max_hp = 140.0
+attack = 16.0
+defense = 3.0
+attack_range = 280.0
+attack_interval = 1.0
+move_speed = 140.0
+aggro_range = 420.0
+rarity = 1
+role = 1
+sanity = 65.0
+loyalty = 50.0
+fear = 40.0
+memory_log = Array[String](["사냥꾼 마을 출신. 화살 수를 늘 센다."])

@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="HeroData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/hero_data.gd" id="1_hero"]
+
+[resource]
+script = ExtResource("1_hero")
+id = &"rookie_knight"
+display_name = "에르사"
+tint = Color(0.913, 0.89, 0.843, 1)
+max_hp = 220.0
+attack = 18.0
+defense = 8.0
+attack_range = 48.0
+attack_interval = 1.1
+move_speed = 130.0
+aggro_range = 420.0
+rarity = 1
+role = 0
+sanity = 70.0
+loyalty = 45.0
+fear = 35.0
+memory_log = Array[String](["은발의 견습 기사. 첫 출정을 앞두고 검을 닦았다."])
