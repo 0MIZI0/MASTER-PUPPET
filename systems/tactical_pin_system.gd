@@ -202,7 +202,7 @@ func _force_commit(type: int, pos: Vector2) -> void:
 		_pending = false
 		_pending_leader = null
 		_proposal_pin.hide_pin()
-		EventBus.counter_proposal_resolved.emit(false)
+		EventBus.counter_proposal_cancelled.emit()
 		EventBus.bullet_time_requested.emit(BT_SOURCE_PROPOSAL, false)
 	var p: Vector2 = _snap_to_nav(pos)
 	_pins[type].show_pin(type, p)

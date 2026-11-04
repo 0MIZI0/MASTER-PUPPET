@@ -26,6 +26,9 @@ const COLOR_ALLY: Color = Color(0.29, 0.53, 0.91)
 const COLOR_ENEMY: Color = Color(0.85, 0.22, 0.22)
 const COLOR_HP_BG: Color = Color(0.09, 0.086, 0.106)
 const COLOR_SHIELD: Color = Color(0.62, 0.78, 0.95)
+const BUBBLE_SIZE: Vector2 = Vector2(360, 64)
+const BUBBLE_TEXT: Color = Color(0.914, 0.89, 0.843)
+const BUBBLE_OUTLINE: Color = Color(0.09, 0.086, 0.106)
 
 @export var data: UnitData
 @export var faction: Faction = Faction.ENEMY
@@ -55,6 +58,8 @@ var _flash_to: Vector2 = Vector2.ZERO
 var _shield: float = 0.0
 var _shield_time: float = 0.0
 var _march_goal: Vector2 = Vector2.INF
+var _bubble: Label
+var _bubble_time: float = 0.0
 
 @onready var agent: NavigationAgent2D = $NavigationAgent2D
 @onready var _shape: CollisionShape2D = $CollisionShape2D
@@ -277,6 +282,32 @@ func deactivate() -> void:
 	agent.avoidance_enabled = false
 	velocity = Vector2.ZERO
 	set_physics_process(false)
+	if _bubble:
+		_bubble.hide()
+		_bubble_time = 0.0
+
+
+## 머리 위 말풍선 (Label 1개 지연 생성·재사용). duration은 게임 시간.
+func say(text: String, duration: float) -> void:
+	if state == State.DEAD:
+		return
+	if _bubble == null:
+		_bubble = Label.new()
+		_bubble.size = BUBBLE_SIZE
+		_bubble.position = Vector2(-BUBBLE_SIZE.x * 0.5, -BODY_RADIUS - 12.0 - BUBBLE_SIZE.y)
+		_bubble.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_bubble.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+		_bubble.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_bubble.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_bubble.z_index = 10
+		_bubble.add_theme_font_size_override(&"font_size", 20)
+		_bubble.add_theme_color_override(&"font_color", BUBBLE_TEXT)
+		_bubble.add_theme_color_override(&"font_outline_color", BUBBLE_OUTLINE)
+		_bubble.add_theme_constant_override(&"outline_size", 6)
+		add_child(_bubble)
+	_bubble.text = text
+	_bubble.show()
+	_bubble_time = duration
 
 
 func is_dead() -> bool:
@@ -368,6 +399,10 @@ func _tick_timers(delta: float) -> void:
 		_flash_time -= delta
 		if _flash_time <= 0.0:
 			queue_redraw()
+	if _bubble_time > 0.0:
+		_bubble_time -= delta
+		if _bubble_time <= 0.0:
+			_bubble.hide()
 	if _shield_time > 0.0:
 		_shield_time -= delta
 		if _shield_time <= 0.0 or _shield <= 0.0:

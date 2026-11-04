@@ -6,7 +6,7 @@ const GROUP_LEADER: StringName = &"squad_leader"
 const SKILL_BUTTON_SIZE: Vector2 = Vector2(125, 96)
 const MISSION_BUTTON_SIZE: Vector2 = Vector2(150, 52)
 
-@export_multiline var proposal_line: String = "%s: \"거긴 위험해요, 마스터. 이쪽으로 우회하죠.\""
+const PROPOSAL_HINT: String = "\n[Y] 승인 (교감 버프)   [N] 강행 (충성도 하락)"
 
 @onready var _type_buttons: Array[Button] = [%BtnMove, %BtnFocus, %BtnRetreat]
 @onready var _psyche_label: Label = %PsycheLabel
@@ -27,6 +27,7 @@ const MISSION_BUTTON_SIZE: Vector2 = Vector2(150, 52)
 var _skills: Array[MasterSkillData] = []
 var _skill_buttons: Array[Button] = []
 var _mission_index: int = 0
+var _proposal_name: String = ""
 
 
 func _ready() -> void:
@@ -38,6 +39,8 @@ func _ready() -> void:
 	EventBus.bullet_time_toggled.connect(_on_bullet_time)
 	EventBus.counter_proposal_raised.connect(_on_proposal_raised)
 	EventBus.counter_proposal_resolved.connect(_on_proposal_resolved)
+	EventBus.counter_proposal_cancelled.connect(_proposal_panel.hide)
+	EventBus.hero_spoke.connect(_on_hero_spoke)
 	EventBus.hero_state_changed.connect(_on_hero_state_changed)
 	EventBus.unit_died.connect(_on_unit_died)
 	EventBus.master_skills_ready.connect(_on_skills_ready)
@@ -62,9 +65,14 @@ func _on_bullet_time(active: bool) -> void:
 
 func _on_proposal_raised(leader: Node2D, _orig: Vector2, _proposed: Vector2, _type: int) -> void:
 	var u: UnitBase = leader as UnitBase
-	var leader_name: String = u.stats.display_name if u else "분대장"
-	_proposal_text.text = (proposal_line % leader_name) + "\n[Y] 승인 (교감 버프)   [N] 강행 (충성도 하락)"
+	_proposal_name = u.stats.display_name if u else "분대장"
+	_proposal_text.text = "%s: …%s" % [_proposal_name, PROPOSAL_HINT]
 	_proposal_panel.show()
+
+
+func _on_hero_spoke(_hero: Node2D, text: String, ev: StringName) -> void:
+	if ev == &"counter_proposal" and _proposal_panel.visible:
+		_proposal_text.text = "%s: \"%s\"%s" % [_proposal_name, text, PROPOSAL_HINT]
 
 
 func _on_proposal_resolved(_accepted: bool) -> void:
