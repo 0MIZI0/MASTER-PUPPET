@@ -36,3 +36,7 @@ window/stretch/aspect="expand"
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 environment/defaults/default_clear_color=Color(0.0902, 0.0863, 0.1059, 1)
+
+[gui]
+
+theme/custom_font="res://assets/fonts/NotoSansKR-Medium-subset.ttf"
