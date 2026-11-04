@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="MasterSkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/master_skill_data.gd" id="1_skill"]
+
+[resource]
+script = ExtResource("1_skill")
+id = &"shield"
+display_name = "SHIELD"
+kind = 1
+hotkey = 87
+mana_cost = 30.0
+cooldown = 10.0
+magnitude = 0.25
+duration = 6.0
+fear_delta = 0.0

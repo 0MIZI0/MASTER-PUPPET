@@ -3,6 +3,7 @@ extends CanvasLayer
 ## 전투 HUD: 핀 타입 선택, 역제안 팝업, 분대장 심리 스탯, 불릿 타임 표시. (비네팅 페이드는 BulletTimeController) EventBus 전용 통신.
 
 const GROUP_LEADER: StringName = &"squad_leader"
+const SKILL_BUTTON_SIZE: Vector2 = Vector2(125, 96)
 
 @export_multiline var proposal_line: String = "%s: \"거긴 위험해요, 마스터. 이쪽으로 우회하죠.\""
 
@@ -12,6 +13,12 @@ const GROUP_LEADER: StringName = &"squad_leader"
 @onready var _proposal_panel: PanelContainer = %ProposalPanel
 @onready var _proposal_text: Label = %ProposalText
 @onready var _result_label: Label = %ResultLabel
+@onready var _mana_label: Label = %ManaLabel
+@onready var _mana_bar: ProgressBar = %ManaBar
+@onready var _skill_bar: HBoxContainer = %SkillBar
+
+var _skills: Array[MasterSkillData] = []
+var _skill_buttons: Array[Button] = []
 
 
 func _ready() -> void:
@@ -25,6 +32,8 @@ func _ready() -> void:
 	EventBus.counter_proposal_resolved.connect(_on_proposal_resolved)
 	EventBus.hero_state_changed.connect(_on_hero_state_changed)
 	EventBus.unit_died.connect(_on_unit_died)
+	EventBus.master_skills_ready.connect(_on_skills_ready)
+	EventBus.master_state_changed.connect(_on_master_state)
 	_on_pin_type_selected(PinTypes.Type.MOVE)
 	_refresh_psyche.call_deferred()
 
@@ -74,3 +83,32 @@ func _on_unit_died(_unit: Node2D) -> void:
 func _show_result(text: String) -> void:
 	_result_label.text = text
 	_result_label.show()
+
+
+# ---------------------------------------------------------------- Master Skills
+func _on_skills_ready(skills: Array[MasterSkillData]) -> void:
+	for b: Button in _skill_buttons:
+		b.queue_free()
+	_skill_buttons.clear()
+	_skills = skills
+	for i: int in skills.size():
+		var b: Button = Button.new()
+		b.custom_minimum_size = SKILL_BUTTON_SIZE
+		b.focus_mode = Control.FOCUS_NONE
+		b.add_theme_font_size_override(&"font_size", 22)
+		b.pressed.connect(EventBus.master_skill_requested.emit.bind(i))
+		_skill_bar.add_child(b)
+		_skill_buttons.append(b)
+
+
+func _on_master_state(mana: float, max_mana: float, cooldowns: PackedFloat32Array) -> void:
+	_mana_bar.max_value = max_mana
+	_mana_bar.value = mana
+	_mana_label.text = "MANA %d/%d" % [floori(mana), roundi(max_mana)]
+	for i: int in mini(_skill_buttons.size(), cooldowns.size()):
+		var sk: MasterSkillData = _skills[i]
+		var cd: float = cooldowns[i]
+		var b: Button = _skill_buttons[i]
+		b.disabled = cd > 0.0 or mana < sk.mana_cost
+		var key: String = OS.get_keycode_string(sk.hotkey)
+		b.text = "%s\n%s" % [sk.display_name, ("%.1fs" % cd) if cd > 0.0 else "%d [%s]" % [roundi(sk.mana_cost), key]]

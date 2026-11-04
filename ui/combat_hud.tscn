@@ -1,4 +1,4 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://ui/combat_hud.gd" id="1_hud"]
 
@@ -14,6 +14,20 @@ void fragment() {
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_vignette"]
 shader = SubResource("Shader_vignette")
+
+[sub_resource type="StyleBoxFlat" id="Style_mana_bg"]
+bg_color = Color(0.122, 0.114, 0.141, 0.9)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="Style_mana_fill"]
+bg_color = Color(0.29, 0.53, 0.91, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [node name="CombatHUD" type="CanvasLayer"]
 script = ExtResource("1_hud")
@@ -144,3 +158,50 @@ grow_vertical = 2
 theme_override_colors/font_color = Color(0.914, 0.89, 0.843, 1)
 theme_override_font_sizes/font_size = 96
 horizontal_alignment = 1
+
+[node name="SkillDock" type="VBoxContainer" parent="."]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -568.0
+offset_top = -176.0
+offset_right = -32.0
+offset_bottom = -32.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="ManaRow" type="HBoxContainer" parent="SkillDock"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+
+[node name="ManaLabel" type="Label" parent="SkillDock/ManaRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.788, 0.776, 0.812, 1)
+theme_override_font_sizes/font_size = 22
+text = "MANA 0/0"
+
+[node name="ManaBar" type="ProgressBar" parent="SkillDock/ManaRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/background = SubResource("Style_mana_bg")
+theme_override_styles/fill = SubResource("Style_mana_fill")
+step = 0.0
+show_percentage = false
+
+[node name="SkillBar" type="HBoxContainer" parent="SkillDock"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+alignment = 2

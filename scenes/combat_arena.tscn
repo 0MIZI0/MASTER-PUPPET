@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3]
+[gd_scene load_steps=18 format=3]
 
 [ext_resource type="Script" path="res://scenes/combat_arena.gd" id="1_arena"]
 [ext_resource type="PackedScene" path="res://entities/unit.tscn" id="2_unit"]
@@ -7,6 +7,8 @@
 [ext_resource type="Resource" path="res://resources/ego_config_default.tres" id="5_ego"]
 [ext_resource type="PackedScene" path="res://ui/combat_hud.tscn" id="6_hud"]
 [ext_resource type="Resource" path="res://resources/monsters/ghoul.tres" id="7_ghoul"]
+[ext_resource type="Script" path="res://systems/master_skill_system.gd" id="8_skills"]
+[ext_resource type="Resource" path="res://resources/master_config_default.tres" id="9_master"]
 [ext_resource type="Resource" path="res://resources/heroes/rookie_knight.tres" id="h0_rookie_knight"]
 [ext_resource type="Resource" path="res://resources/heroes/shield_vanguard.tres" id="h1_shield_vanguard"]
 [ext_resource type="Resource" path="res://resources/heroes/rookie_archer.tres" id="h2_rookie_archer"]
@@ -130,6 +132,9 @@ position = Vector2(1700, 620)
 data = ExtResource("7_ghoul")
 faction = 1
 
+[node name="RecallPoint" type="Marker2D" parent="."]
+position = Vector2(240, 540)
+
 [node name="PathLine" type="Line2D" parent="."]
 width = 4.0
 
@@ -141,5 +146,10 @@ path_line = NodePath("../PathLine")
 [node name="BulletTimeController" type="Node" parent="." node_paths=PackedStringArray("vignette")]
 script = ExtResource("4_bt")
 vignette = NodePath("../CombatHUD/Vignette")
+
+[node name="MasterSkillSystem" type="Node" parent="." node_paths=PackedStringArray("recall_point")]
+script = ExtResource("8_skills")
+config = ExtResource("9_master")
+recall_point = NodePath("../RecallPoint")
 
 [node name="CombatHUD" parent="." instance=ExtResource("6_hud")]

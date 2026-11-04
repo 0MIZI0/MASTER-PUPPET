@@ -36,6 +36,7 @@ func _ready() -> void:
 		path_line.visible = false
 	EventBus.counter_proposal_decided.connect(_resolve_proposal)
 	EventBus.pin_type_selected.connect(set_pin_type)
+	EventBus.pin_commit_requested.connect(_force_commit)
 
 
 func set_pin_type(type: int) -> void:
@@ -191,6 +192,21 @@ func _resolve_proposal(accepted: bool) -> void:
 	EventBus.counter_proposal_resolved.emit(accepted)
 	_commit(_pending_type, final_pos)
 	EventBus.bullet_time_requested.emit(BT_SOURCE_PROPOSAL, false)
+
+
+## 마스터 절대 명령: 역제안 판정 생략, 대기 중 역제안은 무효화.
+func _force_commit(type: int, pos: Vector2) -> void:
+	if _dragging:
+		_cancel_drag()
+	if _pending:
+		_pending = false
+		_pending_leader = null
+		_proposal_pin.hide_pin()
+		EventBus.counter_proposal_resolved.emit(false)
+		EventBus.bullet_time_requested.emit(BT_SOURCE_PROPOSAL, false)
+	var p: Vector2 = _snap_to_nav(pos)
+	_pins[type].show_pin(type, p)
+	_commit(type, p)
 
 
 func _commit(type: int, pos: Vector2) -> void:

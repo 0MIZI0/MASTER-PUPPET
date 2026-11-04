@@ -22,6 +22,7 @@ const FLASH_TIME: float = 0.12
 const COLOR_ALLY: Color = Color(0.29, 0.53, 0.91)
 const COLOR_ENEMY: Color = Color(0.85, 0.22, 0.22)
 const COLOR_HP_BG: Color = Color(0.09, 0.086, 0.106)
+const COLOR_SHIELD: Color = Color(0.62, 0.78, 0.95)
 
 @export var data: UnitData
 @export var faction: Faction = Faction.ENEMY
@@ -46,6 +47,8 @@ var _buff_mult: float = 1.0
 var _buff_time: float = 0.0
 var _flash_time: float = 0.0
 var _flash_to: Vector2 = Vector2.ZERO
+var _shield: float = 0.0
+var _shield_time: float = 0.0
 
 @onready var agent: NavigationAgent2D = $NavigationAgent2D
 @onready var _shape: CollisionShape2D = $CollisionShape2D
@@ -66,6 +69,7 @@ func _ready() -> void:
 	if faction == Faction.ALLY:
 		EventBus.pin_committed.connect(_on_pin_committed)
 		EventBus.squad_buff_applied.connect(_on_buff)
+		EventBus.master_skill_cast.connect(_on_master_skill)
 
 
 func _physics_process(delta: float) -> void:
@@ -202,6 +206,10 @@ func _slot_offset() -> Vector2:
 func take_damage(amount: float, _source: UnitBase) -> void:
 	if state == State.DEAD:
 		return
+	if _shield > 0.0:
+		var absorbed: float = minf(_shield, amount)
+		_shield -= absorbed
+		amount -= absorbed
 	hp -= amount
 	queue_redraw()
 	if hp <= 0.0:
@@ -262,8 +270,24 @@ func _on_pin_committed(type: int, pos: Vector2) -> void:
 
 
 func _on_buff(attack_mult: float, duration: float) -> void:
-	_buff_mult = attack_mult
-	_buff_time = duration
+	_buff_mult = maxf(_buff_mult, attack_mult)
+	_buff_time = maxf(_buff_time, duration)
+
+
+func _on_master_skill(skill: MasterSkillData) -> void:
+	if state == State.DEAD:
+		return
+	match skill.kind:
+		MasterSkillData.Kind.HEAL:
+			heal(stats.max_hp * skill.magnitude)
+		MasterSkillData.Kind.SHIELD:
+			_shield = stats.max_hp * skill.magnitude
+			_shield_time = skill.duration
+			queue_redraw()
+		MasterSkillData.Kind.COMMAND:
+			_on_buff(skill.magnitude, skill.duration)
+	if skill.fear_delta != 0.0:
+		change_psyche(&"fear", skill.fear_delta)
 
 
 func _on_unit_died(node: Node2D) -> void:
@@ -290,6 +314,12 @@ func _tick_timers(delta: float) -> void:
 	if _flash_time > 0.0:
 		_flash_time -= delta
 		if _flash_time <= 0.0:
+			queue_redraw()
+	if _shield_time > 0.0:
+		_shield_time -= delta
+		if _shield_time <= 0.0 or _shield <= 0.0:
+			_shield_time = 0.0
+			_shield = 0.0
 			queue_redraw()
 
 
@@ -344,6 +374,8 @@ func _draw() -> void:
 	var w: float = BODY_RADIUS * 2.0
 	draw_rect(Rect2(-BODY_RADIUS, BODY_RADIUS + 4.0, w, 4.0), COLOR_HP_BG)
 	draw_rect(Rect2(-BODY_RADIUS, BODY_RADIUS + 4.0, w * clampf(hp / stats.max_hp, 0.0, 1.0), 4.0), ring)
+	if _shield > 0.0:
+		draw_arc(Vector2.ZERO, BODY_RADIUS + 5.0, 0.0, TAU, 32, COLOR_SHIELD, 2.0)
 	if _flash_time > 0.0:
 		var fc: Color = Color(0.5, 0.95, 0.6) if _target_friendly else Color(0.91, 0.89, 0.84)
 		draw_line(Vector2.ZERO, _flash_to, fc, 2.0)

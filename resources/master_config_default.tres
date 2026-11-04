@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="MasterConfig" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://resources/master_config.gd" id="1_cfg"]
+[ext_resource type="Script" path="res://resources/master_skill_data.gd" id="6_skill"]
+[ext_resource type="Resource" path="res://resources/skills/heal.tres" id="2_heal"]
+[ext_resource type="Resource" path="res://resources/skills/shield.tres" id="3_shield"]
+[ext_resource type="Resource" path="res://resources/skills/command.tres" id="4_command"]
+[ext_resource type="Resource" path="res://resources/skills/recall.tres" id="5_recall"]
+
+[resource]
+script = ExtResource("1_cfg")
+max_mana = 100.0
+start_mana = 50.0
+mana_regen = 4.0
+skills = Array[ExtResource("6_skill")]([ExtResource("2_heal"), ExtResource("3_shield"), ExtResource("4_command"), ExtResource("5_recall")])
